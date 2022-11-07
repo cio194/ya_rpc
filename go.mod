@@ -1,0 +1,1 @@
+module "ya_rpc"
