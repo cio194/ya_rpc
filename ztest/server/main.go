@@ -8,8 +8,12 @@ import (
 type ServiceImpl struct {
 }
 
-func (service ServiceImpl) Sum(a float64, b float64, c string) (float64, string, error) {
-	return a + b, strings.ToUpper(c), nil
+func (service *ServiceImpl) Sum(a float64, b float64) (float64, error) {
+	return a + b, nil
+}
+
+func (service *ServiceImpl) Upper(s string) (string, error) {
+	return strings.ToUpper(s), nil
 }
 
 func main() {

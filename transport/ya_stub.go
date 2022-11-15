@@ -17,9 +17,9 @@ func NewYaStub(address string) *YaStub {
 	return &YaStub{conn}
 }
 
-func (stub YaStub) RemoteCall(request []byte) ([]byte, error) {
-	// 发送响应
-	_, err := stub.conn.Write(request)
+func (stub *YaStub) RemoteCall(pk []byte) ([]byte, error) {
+	// 发送请求
+	_, err := stub.conn.Write(pk)
 	if err != nil {
 		return nil, err
 	}

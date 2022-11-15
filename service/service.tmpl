@@ -1,29 +1,81 @@
-{{ range $funcIdx, $funcInfo := . }}
-{{ $method := $funcInfo.Method }}
-{{ $args := $funcInfo.Args }}
-{{ $rets := $funcInfo.Rets }}
-func (client *yaClient) {{ $method.Name }}({{ ArgList $args }}) ({{ TypeList &rets }}, error) {
-	// 计算request data长度：methodIdx args
-	requestLen := uint32({{ RequestLen $args }})
+package ya_rpc
 
-	// 数据包打包：requestLen data(methodIdx args)
-	pack := make([]byte, 4 + requestLen)
-	data := pack
-	common.PutUint32(&data, requestLen)
-	common.PutUint32(&data, {{ $funcIdx }})
-	{{ range $argIdx, $arg := $args }}common.Put{{$arg.Name}}(&data, arg{{ $argIdx }})
-	{{ end }}
+import (
+    "ya_rpc/common"
+    "ya_rpc/pack"
+    "ya_rpc/service"
+    "ya_rpc/transport"
+)
 
-	// 发送至远端
-	_, err := client.conn.Write(pack)
-	common.CheckError(err, "Write pack")
+/**
+YaClient
+*/
 
-	// 接收响应 dataLen data(rets)
-	data, err = common.ParseData(client.conn)
-	common.CheckError(err, "Read pack")
+type YaClient struct {
+    stub *transport.YaStub
+}
 
-	// 响应解析
-	ret := common.Get{{ $ret.Name }}(&data)
-	err = common.GetError(&data)
-	return ret, err
-}{{ end }}
+func NewYaClient(address string) *YaClient {
+    return &YaClient{stub: transport.NewYaStub(address)}
+}
+
+{{range $funcIdx, $funcInfo := .}}{{$method := $funcInfo.Method}}{{$args := $funcInfo.Args}}{{$rets := $funcInfo.Rets}}
+func (client *YaClient) {{$method.Name}}{{ArgList $args}} {{RetList $rets}} {
+    // 计算request data长度
+    requestLen := uint32({{RequestLen $args}})
+
+    // 数据包打包：dataLen request_data(methodIdx args)
+    pk := pack.NewPack(requestLen)
+    request := pk[4:]
+    pack.Putuint32(&request, {{$funcIdx}})
+{{range $argIdx, $arg := $args}}    pack.Put{{$arg.Name}}(&request, arg{{$argIdx}})
+{{end}}
+
+    // 传输（远程调用）
+    response, err := client.stub.RemoteCall(pk)
+    common.CheckError(err, "RemoteCall")
+
+    // 响应解析
+{{range $retIdx, $ret := $rets}}    ret{{$retIdx}}, err := pack.Get{{$ret.Name}}(&response)
+    common.CheckError(err, "Wrong response")
+{{end}}
+    errRet, err := pack.Geterror(&response)
+    common.CheckError(err, "Wrong response")
+    err = errRet
+
+    return {{ReturnList $rets}}
+}
+{{end}}
+
+/**
+YaServer
+*/
+
+func NewYaServer(address string, ser service.Service) *transport.YaServer {
+    var yaFunc [{{len .}}]func(ser service.Service, params []byte) []byte
+{{range $funcIdx, $funcInfo := .}}    yaFunc[{{$funcIdx}}] = ya{{$funcInfo.Method.Name}}
+{{end}}
+    return &transport.YaServer{Address: address, Service: ser, YaFunc: yaFunc[:]}
+}
+
+{{range $funcIdx, $funcInfo := .}}{{$method := $funcInfo.Method}}{{$args := $funcInfo.Args}}{{$rets := $funcInfo.Rets}}
+func ya{{$method.Name}}(ser service.Service, request []byte) []byte {
+    // 获取参数
+{{range $argIdx, $arg := $args}}    arg{{$argIdx}}, err := pack.Get{{$arg.Name}}(&request)
+    common.CheckGoError(err, "Wrong request")
+{{end}}
+
+    // 执行函数
+    {{ReturnList $rets}} := ser.{{$method.Name}}({{CallList $args}})
+
+    // 包装响应：dataLen response_data(rets err)
+    responseLen := uint32({{ResponseLen $rets}})
+    pk := pack.NewPack(responseLen)
+    response := pk[4:]
+{{range $retIdx, $ret := $rets}}    pack.Put{{$ret.Name}}(&response, ret{{$retIdx}})
+{{end}}
+    pack.Puterror(&response, err)
+
+    return pk
+}
+{{end}}

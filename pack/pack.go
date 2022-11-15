@@ -73,6 +73,16 @@ func Putstring(dp *[]byte, s string) {
 	putStr(dp, s)
 }
 
+func Getint64(dp *[]byte) (int64, error) {
+	const msg = "get int64"
+	u, err := get64(dp, msg)
+	return int64(u), err
+}
+
+func Putint64(dp *[]byte, i int64) {
+	put64(dp, uint64(i))
+}
+
 func Geterror(dp *[]byte) (error, error) {
 	const msg = "get error_msg"
 	// 获取长度

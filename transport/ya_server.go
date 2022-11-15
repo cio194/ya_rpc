@@ -37,7 +37,7 @@ func (server *YaServer) handleConn(conn net.Conn) {
 	println("Connection from  : ", connFrom)
 	// 循环处理数据包
 	for {
-		// 获取数据
+		// 获取请求数据
 		request, err := pack.ParsePack(conn)
 		switch err {
 		case nil:
@@ -57,9 +57,9 @@ func (server *YaServer) handleMsg(conn net.Conn, request []byte) {
 	bad := methodIdx >= uint32(len(server.YaFunc))
 	common.JudgeGoError(bad, "wrong methodIdx")
 	// 按照methodIdx调用函数
-	response := server.YaFunc[methodIdx](server.Service, request)
+	pk := server.YaFunc[methodIdx](server.Service, request)
 
-	// 回传响应
-	_, err = conn.Write(response)
+	// 回传响应包
+	_, err = conn.Write(pk)
 	common.CheckGoError(err, "SendResponse")
 }
