@@ -1,0 +1,29 @@
+{{ range $funcIdx, $funcInfo := . }}
+{{ $method := $funcInfo.Method }}
+{{ $args := $funcInfo.Args }}
+{{ $rets := $funcInfo.Rets }}
+func (client *yaClient) {{ $method.Name }}({{ ArgList $args }}) ({{ TypeList &rets }}, error) {
+	// 计算request data长度：methodIdx args
+	requestLen := uint32({{ RequestLen $args }})
+
+	// 数据包打包：requestLen data(methodIdx args)
+	pack := make([]byte, 4 + requestLen)
+	data := pack
+	common.PutUint32(&data, requestLen)
+	common.PutUint32(&data, {{ $funcIdx }})
+	{{ range $argIdx, $arg := $args }}common.Put{{$arg.Name}}(&data, arg{{ $argIdx }})
+	{{ end }}
+
+	// 发送至远端
+	_, err := client.conn.Write(pack)
+	common.CheckError(err, "Write pack")
+
+	// 接收响应 dataLen data(rets)
+	data, err = common.ParseData(client.conn)
+	common.CheckError(err, "Read pack")
+
+	// 响应解析
+	ret := common.Get{{ $ret.Name }}(&data)
+	err = common.GetError(&data)
+	return ret, err
+}{{ end }}
