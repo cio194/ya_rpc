@@ -35,6 +35,10 @@ func (server *YaServer) handleConn(conn net.Conn) {
 	defer conn.Close()
 	connFrom := conn.RemoteAddr().String()
 	println("Connection from  : ", connFrom)
+
+	//// todo test timeout
+	//time.Sleep(time.Duration(300 * 1e9))
+
 	// 循环处理数据包
 	for {
 		// 获取请求数据

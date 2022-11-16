@@ -49,7 +49,7 @@ func RequestLen(ts []reflect.Type) string {
 	return s[:len(s)-3]
 }
 
-// ReturnList ret0, ret1, ..., errRet
+// ReturnList ret0, ret1, ..., err
 func ReturnList(ts []reflect.Type) string {
 	if len(ts) == 0 {
 		return "err"
@@ -88,6 +88,19 @@ func ResponseLen(ts []reflect.Type) string {
 	return buf.String()
 }
 
+// ReturnError 0, "", nil, ..., err
+func ReturnError(ts []reflect.Type) string {
+	if len(ts) == 0 {
+		return "err"
+	}
+	var buf bytes.Buffer
+	for i := 0; i < len(ts); i++ {
+		buf.WriteString(emptyValue(ts[i]) + ", ")
+	}
+	buf.WriteString("err")
+	return buf.String()
+}
+
 /**
 下列函数类型扩展时需调整
 */
@@ -107,6 +120,21 @@ func mLen(t reflect.Type, name string) string {
 		return "uint32(4 + len(" + name + "))"
 	case reflect.Int64:
 		return "8"
+	default:
+		common.PrintExit("error type")
+	}
+	return ""
+}
+
+func emptyValue(t reflect.Type) string {
+	k := t.Kind()
+	switch k {
+	case reflect.Float64:
+		return "0"
+	case reflect.String:
+		return "\"\""
+	case reflect.Int64:
+		return "0"
 	default:
 		common.PrintExit("error type")
 	}

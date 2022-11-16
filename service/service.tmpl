@@ -33,14 +33,20 @@ func (client *YaClient) {{$method.Name}}{{ArgList $args}} {{RetList $rets}} {
 
     // 传输（远程调用）
     response, err := client.stub.RemoteCall(pk)
-    common.CheckError(err, "RemoteCall")
+    if err != nil {
+        return {{ReturnError $rets}}
+    }
 
     // 响应解析
 {{range $retIdx, $ret := $rets}}    ret{{$retIdx}}, err := pack.Get{{$ret.Name}}(&response)
-    common.CheckError(err, "Wrong response")
+    if err != nil {
+        return {{ReturnError $rets}}
+    }
 {{end}}
     errRet, err := pack.Geterror(&response)
-    common.CheckError(err, "Wrong response")
+    if err != nil {
+        return {{ReturnError $rets}}
+    }
     err = errRet
 
     return {{ReturnList $rets}}

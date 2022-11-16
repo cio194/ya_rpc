@@ -34,14 +34,20 @@ func (client *YaClient) Sum(arg0 float64, arg1 float64, ) (float64, error) {
 
     // 传输（远程调用）
     response, err := client.stub.RemoteCall(pk)
-    common.CheckError(err, "RemoteCall")
+    if err != nil {
+        return 0, err
+    }
 
     // 响应解析
     ret0, err := pack.Getfloat64(&response)
-    common.CheckError(err, "Wrong response")
+    if err != nil {
+        return 0, err
+    }
 
     errRet, err := pack.Geterror(&response)
-    common.CheckError(err, "Wrong response")
+    if err != nil {
+        return 0, err
+    }
     err = errRet
 
     return ret0, err
@@ -60,14 +66,20 @@ func (client *YaClient) Upper(arg0 string, ) (string, error) {
 
     // 传输（远程调用）
     response, err := client.stub.RemoteCall(pk)
-    common.CheckError(err, "RemoteCall")
+    if err != nil {
+        return "", err
+    }
 
     // 响应解析
     ret0, err := pack.Getstring(&response)
-    common.CheckError(err, "Wrong response")
+    if err != nil {
+        return "", err
+    }
 
     errRet, err := pack.Geterror(&response)
-    common.CheckError(err, "Wrong response")
+    if err != nil {
+        return "", err
+    }
     err = errRet
 
     return ret0, err

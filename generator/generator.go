@@ -56,6 +56,7 @@ func RegisterFunc(tmpl *template.Template) *template.Template {
 		"ReturnList":  service.ReturnList,
 		"CallList":    service.CallList,
 		"ResponseLen": service.ResponseLen,
+		"ReturnError": service.ReturnError,
 	}
 	return tmpl.Funcs(funcMap)
 }
