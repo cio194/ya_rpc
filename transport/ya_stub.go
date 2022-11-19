@@ -54,6 +54,8 @@ func (stub *YaStub) RemoteCall(pk []byte) ([]byte, error) {
 			} else {
 				return nil, err
 			}
+		} else {
+			return data, nil
 		}
 	}
 	// 超时或其他错误
